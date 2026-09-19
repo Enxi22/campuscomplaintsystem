@@ -1,0 +1,213 @@
+{% extends "student/base.html" %}
+
+{% block title %}Complaint #{{ complaint.id }} - Campus Complaints{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">Complaint #{{ complaint.id }}</h1>
+    <a href="{{ url_for('my_complaints') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-8">
+        <!-- Header Card -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex flex-wrap gap-2 mb-3">
+                    <span class="badge bg-primary fs-6 px-3 py-2">{{ complaint.category }}</span>
+                    <span class="badge {{ complaint.status_badge_class }} fs-6 px-3 py-2">{{ complaint.status }}</span>
+                    <span class="badge {{ complaint.priority_badge_class }} fs-6 px-3 py-2">{{ complaint.priority }}</span>
+                </div>
+                <div class="row text-sm text-muted">
+                    <div class="col-md-6">
+                        <strong>Submitted:</strong> {{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Updated:</strong> {{ complaint.updated_at.strftime('%b %d, %Y %I:%M %p') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="form-label text-muted text-xs fw-semibold mb-1">Location</label>
+                    <p class="mb-0"><i class="bi bi-geo-alt-fill text-muted me-2"></i>{{ complaint.location }}</p>
+                </div>
+                <div>
+                    <label class="form-label text-muted text-xs fw-semibold mb-1">Description</label>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ complaint.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Card -->
+        {% if complaint.image_path %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-image me-2"></i>Attached Image</h3>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('static', filename=complaint.image_path) }}" target="_blank" rel="noopener">
+                    <img src="{{ url_for('static', filename=complaint.image_path) }}" alt="Complaint image" class="complaint-image">
+                </a>
+                <p class="text-sm text-muted mt-2">Click to view full size</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Admin Response Card -->
+        {% if complaint.admin_remarks or complaint.status != 'Submitted' %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-person-badge me-2"></i>Admin Response</h3>
+            </div>
+            <div class="card-body">
+                <!-- Status Timeline -->
+                <div class="timeline">
+                    <!-- Submitted -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-check-circle text-success me-1"></i>{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                            <h5 class="timeline-title">Submitted</h5>
+                            <p class="text-muted small mb-0">Complaint received and logged in the system.</p>
+                        </div>
+                    </div>
+
+                    <!-- Under Review -->
+                    {% if complaint.status in ['Under Review', 'In Progress', 'Resolved', 'Rejected'] %}
+                    <div class="timeline-item {% if complaint.status == 'Under Review' %}current{% else %}completed{% endif %}">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-search text-info me-1"></i>Under Review</div>
+                            <h5 class="timeline-title">Under Review</h5>
+                            {% if complaint.admin_remarks and complaint.status in ['Under Review', 'In Progress', 'Resolved', 'Rejected'] %}
+                            <p class="timeline-remarks">{{ complaint.admin_remarks }}</p>
+                            {% else %}
+                            <p class="text-muted small mb-0">Admin is reviewing the complaint.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">Under Review</h5>
+                            <p class="text-muted small mb-0">Awaiting admin review.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- In Progress -->
+                    {% if complaint.status in ['In Progress', 'Resolved', 'Rejected'] %}
+                    <div class="timeline-item {% if complaint.status == 'In Progress' %}current{% else %}completed{% endif %}">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-tools text-warning me-1"></i>In Progress</div>
+                            <h5 class="timeline-title">In Progress</h5>
+                            <p class="text-muted small mb-0">Work has started on resolving this issue.</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">In Progress</h5>
+                            <p class="text-muted small mb-0">Not started yet.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Resolved / Rejected -->
+                    {% if complaint.status in ['Resolved', 'Rejected'] %}
+                    <div class="timeline-item current">
+                        <div class="timeline-content">
+                            <div class="timeline-time">
+                                {% if complaint.status == 'Resolved' %}
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                {% else %}
+                                <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                                {% endif %}
+                                {{ complaint.updated_at.strftime('%b %d, %Y %I:%M %p') }}
+                            </div>
+                            <h5 class="timeline-title">{{ complaint.status }}</h5>
+                            {% if complaint.admin_remarks %}
+                            <p class="timeline-remarks">{{ complaint.admin_remarks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">Resolution</h5>
+                            <p class="text-muted small mb-0">Awaiting final resolution.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Admin Remarks Block -->
+                {% if complaint.admin_remarks %}
+                <div class="admin-remarks mt-4">
+                    <div class="admin-remarks-label">Admin Remarks</div>
+                    <p class="mb-0">{{ complaint.admin_remarks }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <!-- Info Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-card-checklist me-2"></i>Complaint Info</h3>
+            </div>
+            <div class="card-body">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">ID</dt>
+                    <dd class="col-sm-8 fw-medium">#{{ complaint.id }}</dd>
+
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">Category</dt>
+                    <dd class="col-sm-8"><span class="badge bg-primary">{{ complaint.category }}</span></dd>
+
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">Status</dt>
+                    <dd class="col-sm-8"><span class="badge {{ complaint.status_badge_class }}">{{ complaint.status }}</span></dd>
+
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">Priority</dt>
+                    <dd class="col-sm-8"><span class="badge {{ complaint.priority_badge_class }}">{{ complaint.priority }}</span></dd>
+
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">Submitted</dt>
+                    <dd class="col-sm-8 text-sm">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</dd>
+
+                    <dt class="col-sm-4 text-muted text-xs fw-semibold">Last Updated</dt>
+                    <dd class="col-sm-8 text-sm">{{ complaint.updated_at.strftime('%b %d, %Y %I:%M %p') }}</dd>
+                </dl>
+            </div>
+        </div>
+
+        <!-- Status Guide Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-question-circle me-2"></i>Status Guide</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2"><span class="badge badge-secondary me-2">Submitted</span> Received, awaiting review</li>
+                    <li class="mb-2"><span class="badge badge-info me-2">Under Review</span> Admin is evaluating</li>
+                    <li class="mb-2"><span class="badge badge-warning me-2">In Progress</span> Work has started</li>
+                    <li class="mb-2"><span class="badge badge-success me-2">Resolved</span> Issue fixed</li>
+                    <li class="mb-2"><span class="badge badge-danger me-2">Rejected</span> Not valid / out of scope</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

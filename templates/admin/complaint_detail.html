@@ -1,0 +1,208 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Complaint #{{ complaint.id }} - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title mb-0">Complaint #{{ complaint.id }}</h1>
+    <a href="{{ url_for('admin_complaints') }}" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back to List
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-8">
+        <!-- Header Card -->
+        <div class="card mb-4 detail-header">
+            <div class="card-body">
+                <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                    <div>
+                        <span class="fw-bold fs-4 text-muted">#{{ complaint.id }}</span>
+                    </div>
+                    <span class="badge bg-primary fs-6 px-3 py-2">{{ complaint.category }}</span>
+                    <span class="badge {{ complaint.status_badge_class }} fs-6 px-3 py-2">{{ complaint.status }}</span>
+                    <span class="badge {{ complaint.priority_badge_class }} fs-6 px-3 py-2">{{ complaint.priority }}</span>
+                </div>
+                <div class="row text-sm text-muted">
+                    <div class="col-md-4">
+                        <strong>Student:</strong> {{ complaint.user.username }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Submitted:</strong> {{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Updated:</strong> {{ complaint.updated_at.strftime('%b %d, %Y %I:%M %p') }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Details Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>Details</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-4">
+                    <label class="form-label text-muted text-xs fw-semibold mb-1">Location</label>
+                    <p class="mb-0"><i class="bi bi-geo-alt-fill text-muted me-2"></i>{{ complaint.location }}</p>
+                </div>
+                <div>
+                    <label class="form-label text-muted text-xs fw-semibold mb-1">Description</label>
+                    <p class="mb-0" style="white-space: pre-wrap;">{{ complaint.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Image Card -->
+        {% if complaint.image_path %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-image me-2"></i>Attached Image</h3>
+            </div>
+            <div class="card-body">
+                <a href="{{ url_for('static', filename=complaint.image_path) }}" target="_blank" rel="noopener">
+                    <img src="{{ url_for('static', filename=complaint.image_path) }}" alt="Complaint image" class="complaint-image">
+                </a>
+                <p class="text-sm text-muted mt-2">Click to view full size</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <!-- Admin Actions Card -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-sliders me-2"></i>Admin Actions</h3>
+            </div>
+            <div class="card-body">
+                <form method="POST" class="admin-actions-form">
+                    <div class="mb-3">
+                        <label for="status" class="form-label required">Status</label>
+                        <select class="form-control" id="status" name="status" required>
+                            {% for s in STATUSES %}
+                            <option value="{{ s }}" {% if complaint.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="priority" class="form-label required">Priority</label>
+                        <select class="form-control" id="priority" name="priority" required>
+                            {% for p in PRIORITIES %}
+                            <option value="{{ p }}" {% if complaint.priority == p %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="admin_remarks" class="form-label">Admin Remarks</label>
+                        <textarea class="form-control" id="admin_remarks" name="admin_remarks" rows="4" 
+                                  placeholder="Add remarks for the student...">{{ complaint.admin_remarks if complaint.admin_remarks else '' }}</textarea>
+                        <div class="form-text">Visible to student on complaint detail page</div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-save me-1"></i>Save Changes
+                        </button>
+                        <a href="{{ url_for('admin_complaints') }}" class="btn btn-secondary flex-grow-1">
+                            <i class="bi bi-x me-1"></i>Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Status Timeline Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-clock-history me-2"></i>Status Timeline</h3>
+            </div>
+            <div class="card-body">
+                <div class="timeline timeline-admin">
+                    <!-- Submitted -->
+                    <div class="timeline-item completed">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-check-circle text-success me-1"></i>{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</div>
+                            <h5 class="timeline-title">Submitted</h5>
+                            <p class="text-muted small mb-0">Complaint received and logged in the system.</p>
+                        </div>
+                    </div>
+
+                    <!-- Under Review -->
+                    {% if complaint.status in ['Under Review', 'In Progress', 'Resolved', 'Rejected'] %}
+                    <div class="timeline-item {% if complaint.status == 'Under Review' %}current{% else %}completed{% endif %}">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-search text-info me-1"></i>Under Review</div>
+                            <h5 class="timeline-title">Under Review</h5>
+                            {% if complaint.admin_remarks and complaint.status in ['Under Review', 'In Progress', 'Resolved', 'Rejected'] %}
+                            <p class="timeline-remarks">{{ complaint.admin_remarks }}</p>
+                            {% else %}
+                            <p class="text-muted small mb-0">Admin is reviewing the complaint.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">Under Review</h5>
+                            <p class="text-muted small mb-0">Awaiting admin review.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- In Progress -->
+                    {% if complaint.status in ['In Progress', 'Resolved', 'Rejected'] %}
+                    <div class="timeline-item {% if complaint.status == 'In Progress' %}current{% else %}completed{% endif %}">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-tools text-warning me-1"></i>In Progress</div>
+                            <h5 class="timeline-title">In Progress</h5>
+                            <p class="text-muted small mb-0">Work has started on resolving this issue.</p>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">In Progress</h5>
+                            <p class="text-muted small mb-0">Not started yet.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Resolved / Rejected -->
+                    {% if complaint.status in ['Resolved', 'Rejected'] %}
+                    <div class="timeline-item current">
+                        <div class="timeline-content">
+                            <div class="timeline-time">
+                                {% if complaint.status == 'Resolved' %}
+                                <i class="bi bi-check-circle-fill text-success me-1"></i>
+                                {% else %}
+                                <i class="bi bi-x-circle-fill text-danger me-1"></i>
+                                {% endif %}
+                                {{ complaint.updated_at.strftime('%b %d, %Y %I:%M %p') }}
+                            </div>
+                            <h5 class="timeline-title">{{ complaint.status }}</h5>
+                            {% if complaint.admin_remarks %}
+                            <p class="timeline-remarks">{{ complaint.admin_remarks }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="timeline-item pending">
+                        <div class="timeline-content">
+                            <div class="timeline-time"><i class="bi bi-clock text-muted me-1"></i>Pending</div>
+                            <h5 class="timeline-title">Resolution</h5>
+                            <p class="text-muted small mb-0">Awaiting final resolution.</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Complaints Management - Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Complaints Management</h1>
+</div>
+
+<!-- Filter Toolbar -->
+<div class="card filter-toolbar mb-4">
+    <form method="GET" class="w-100">
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-4">
+                <label for="q" class="form-label">Search</label>
+                <input type="text" class="form-control" id="q" name="q" 
+                       placeholder="Search description, location, student..." 
+                       value="{{ q }}">
+            </div>
+            <div class="col-12 col-md-2">
+                <label for="category" class="form-label">Category</label>
+                <select class="form-select" id="category" name="category">
+                    <option value="">All Categories</option>
+                    {% for cat in CATEGORIES %}
+                    <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label for="status" class="form-label">Status</label>
+                <select class="form-select" id="status" name="status">
+                    <option value="">All Statuses</option>
+                    {% for s in STATUSES %}
+                    <option value="{{ s }}" {% if status == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2">
+                <label for="priority" class="form-label">Priority</label>
+                <select class="form-select" id="priority" name="priority">
+                    <option value="">All Priorities</option>
+                    {% for p in PRIORITIES %}
+                    <option value="{{ p }}" {% if priority == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-12 col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-primary flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a href="{{ url_for('admin_complaints') }}" class="btn btn-secondary flex-grow-1">
+                    <i class="bi bi-x-lg me-1"></i>Clear
+                </a>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Results -->
+<div class="card">
+    <div class="card-header">
+        {% if pagination.total > 0 %}
+        <span class="text-sm text-muted">
+            Showing {{ pagination.first }} to {{ pagination.last }} of {{ pagination.total }} complaints
+        </span>
+        {% else %}
+        <span class="text-sm text-muted">No complaints found</span>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        {% if complaints %}
+        <!-- Desktop Table -->
+        <div class="table-responsive d-none d-md-block">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Student</th>
+                        <th>Category</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td class="fw-medium">#{{ complaint.id }}</td>
+                        <td>{{ complaint.user.username }}</td>
+                        <td>{{ complaint.category }}</td>
+                        <td>{{ complaint.location }}</td>
+                        <td><span class="badge {{ complaint.status_badge_class }}">{{ complaint.status }}</span></td>
+                        <td><span class="badge {{ complaint.priority_badge_class }}">{{ complaint.priority }}</span></td>
+                        <td class="text-sm text-muted">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                        <td>
+                            <a href="{{ url_for('admin_complaint_detail', complaint_id=complaint.id) }}" class="btn btn-sm btn-ghost">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card List -->
+        <div class="d-md-none">
+            {% for complaint in complaints %}
+            <div class="complaint-mobile-card m-3">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="fw-medium">#{{ complaint.id }}</span>
+                    <span class="badge {{ complaint.status_badge_class }}">{{ complaint.status }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Student</span>
+                    <span class="field-value">{{ complaint.user.username }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Category</span>
+                    <span class="field-value">{{ complaint.category }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Location</span>
+                    <span class="field-value">{{ complaint.location }}</span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Priority</span>
+                    <span class="field-value"><span class="badge {{ complaint.priority_badge_class }}">{{ complaint.priority }}</span></span>
+                </div>
+                <div class="field">
+                    <span class="field-label">Date</span>
+                    <span class="field-value">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+                </div>
+                <div class="d-grid mt-3">
+                    <a href="{{ url_for('admin_complaint_detail', complaint_id=complaint.id) }}" class="btn btn-primary">
+                        <i class="bi bi-eye me-1"></i>View Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-search empty-state-icon"></i>
+            <h4 class="empty-state-title">No complaints match your filters</h4>
+            <p class="empty-state-text">Try adjusting your search or filter criteria.</p>
+            <a href="{{ url_for('admin_complaints') }}" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise me-1"></i>Clear Filters
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if pagination.pages > 1 %}
+    <div class="card-footer bg-white border-0">
+        <nav aria-label="Complaints pagination">
+            <ul class="pagination justify-content-center mb-0">
+                {% set base_args = {'q': q, 'category': category, 'status': status, 'priority': priority} %}
+                
+                <!-- Previous -->
+                <li class="page-item {% if not pagination.has_prev %}disabled{% endif %}">
+                    {% if pagination.has_prev %}
+                    <a class="page-link" href="{{ url_for('admin_complaints', page=pagination.prev_num, **base_args) }}" aria-label="Previous">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link"><i class="bi bi-chevron-left"></i></span>
+                    {% endif %}
+                </li>
+
+                <!-- Page numbers -->
+                {% set start_page = [1, pagination.page - 2] | max %}
+                {% set end_page = [pagination.pages, pagination.page + 2] | min %}
+                
+                {% if start_page > 1 %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin_complaints', page=1, **base_args) }}">1</a>
+                </li>
+                {% if start_page > 2 %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                {% endif %}
+
+                {% for p in range(start_page, end_page + 1) %}
+                <li class="page-item {% if p == pagination.page %}active{% endif %}">
+                    <a class="page-link" href="{{ url_for('admin_complaints', page=p, **base_args) }}">{{ p }}</a>
+                </li>
+                {% endfor %}
+
+                {% if end_page < pagination.pages %}
+                {% if end_page < pagination.pages - 1 %}
+                <li class="page-item disabled"><span class="page-link">...</span></li>
+                {% endif %}
+                <li class="page-item">
+                    <a class="page-link" href="{{ url_for('admin_complaints', page=pagination.pages, **base_args) }}">{{ pagination.pages }}</a>
+                </li>
+                {% endif %}
+
+                <!-- Next -->
+                <li class="page-item {% if not pagination.has_next %}disabled{% endif %}">
+                    {% if pagination.has_next %}
+                    <a class="page-link" href="{{ url_for('admin_complaints', page=pagination.next_num, **base_args) }}" aria-label="Next">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                    {% else %}
+                    <span class="page-link"><i class="bi bi-chevron-right"></i></span>
+                    {% endif %}
+                </li>
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

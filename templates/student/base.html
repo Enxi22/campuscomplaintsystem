@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block navbar_brand %}
+<a class="navbar-brand fw-bold text-primary" href="{{ url_for('dashboard') }}">
+    <i class="bi bi-building me-2"></i>Campus Complaints
+</a>
+{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
+        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'submit_complaint' %}active{% endif %}" href="{{ url_for('submit_complaint') }}">
+        <i class="bi bi-plus-circle me-1"></i>Submit Complaint
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link {% if request.endpoint == 'my_complaints' %}active{% endif %}" href="{{ url_for('my_complaints') }}">
+        <i class="bi bi-list-check me-1"></i>My Complaints
+    </a>
+</li>
+{% endblock %}

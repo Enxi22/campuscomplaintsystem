@@ -1,0 +1,181 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Statistics - Admin Dashboard{% endblock %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">Statistics</h1>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-primary">
+            <div class="stat-icon"><i class="bi bi-list-ul"></i></div>
+            <div class="stat-number">{{ total }}</div>
+            <div class="stat-label">Total Complaints</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-secondary">
+            <div class="stat-icon"><i class="bi bi-people"></i></div>
+            <div class="stat-number">{{ categories|length }}</div>
+            <div class="stat-label">Categories Used</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-success">
+            <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="stat-number">{{ statuses.get('Resolved', 0) }}</div>
+            <div class="stat-label">Resolved</div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="stat-card stat-card-warning">
+            <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
+            <div class="stat-number">{{ statuses.get('In Progress', 0) + statuses.get('Under Review', 0) }}</div>
+            <div class="stat-label">Pending Review</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-pie-chart me-2"></i>Complaints by Category</h3>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="categoryChart" width="300" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-bar-chart me-2"></i>Complaints by Status</h3>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="statusChart" width="300" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-flag me-2"></i>Complaints by Priority</h3>
+            </div>
+            <div class="card-body d-flex align-items-center justify-content-center">
+                <canvas id="priorityChart" width="300" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-lg-6">
+        <div class="card chart-card h-100">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-people me-2"></i>Top Students</h3>
+            </div>
+            <div class="card-body">
+                {% if by_student %}
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr><th>Student</th><th>Complaints</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for username, count in by_student[:10] %}
+                            <tr>
+                                <td>{{ username }}</td>
+                                <td><span class="badge bg-primary">{{ count }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state"><p class="text-muted">No student data</p></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title mb-0"><i class="bi bi-grid me-2"></i>Category Breakdown</h3>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0">
+                        <thead>
+                            <tr><th>Category</th><th>Count</th><th>Percentage</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for cat, count in categories.items() if count > 0 %}
+                            <tr>
+                                <td><span class="badge bg-primary">{{ cat }}</span></td>
+                                <td>{{ count }}</td>
+                                <td>{{ "%.1f"|format((count/total*100)) if total > 0 else 0 }}%</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    fetch('/admin/stats')
+        .then(res => res.json())
+        .then(data => {
+            new Chart(document.getElementById('categoryChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.categories),
+                    datasets: [{
+                        data: Object.values(data.categories),
+                        backgroundColor: ['#2563EB','#059669','#D97706','#DC2626','#0891B2','#7C3AED','#DB2777','#EA580C','#16A34A','#6B7280','#9CA3AF'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {padding: 16, font: {size: 12}}}}, cutout: '65%'}
+            });
+            new Chart(document.getElementById('statusChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(data.statuses),
+                    datasets: [{
+                        data: Object.values(data.statuses),
+                        backgroundColor: ['#9CA3AF','#0891B2','#D97706','#059669','#DC2626'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {padding: 16, font: {size: 12}}}}, cutout: '65%'}
+            });
+            new Chart(document.getElementById('priorityChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Low','Medium','High','Critical'],
+                    datasets: [{
+                        data: [{{ priorities.get('Low', 0) }}, {{ priorities.get('Medium', 0) }}, {{ priorities.get('High', 0) }}, {{ priorities.get('Critical', 0) }}],
+                        backgroundColor: ['#9CA3AF','#2563EB','#D97706','#DC2626'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom', labels: {padding: 16, font: {size: 12}}}}, cutout: '65%'}
+            });
+        });
+});
+</script>
+{% endblock %}

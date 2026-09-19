@@ -1,0 +1,95 @@
+{% extends "student/base.html" %}
+
+{% block title %}My Complaints - Campus Complaints{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="page-title">My Complaints</h1>
+    <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>Submit New
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if complaints %}
+        <div class="table-responsive">
+            <table class="table table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Category</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Submitted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for complaint in complaints %}
+                    <tr>
+                        <td class="fw-medium">#{{ complaint.id }}</td>
+                        <td>{{ complaint.category }}</td>
+                        <td>{{ complaint.location }}</td>
+                        <td><span class="badge {{ complaint.status_badge_class }}">{{ complaint.status }}</span></td>
+                        <td><span class="badge {{ complaint.priority_badge_class }}">{{ complaint.priority }}</span></td>
+                        <td class="text-sm text-muted">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</td>
+                        <td>
+                            <a href="{{ url_for('complaint_detail', complaint_id=complaint.id) }}" class="btn btn-sm btn-ghost">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile card list -->
+        <div class="complaint-mobile-card d-lg-none">
+            {% for complaint in complaints %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <span class="fw-medium">#{{ complaint.id }}</span>
+                        <span class="badge {{ complaint.status_badge_class }}">{{ complaint.status }}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Category</span>
+                        <span class="field-value">{{ complaint.category }}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Location</span>
+                        <span class="field-value">{{ complaint.location }}</span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Priority</span>
+                        <span class="field-value"><span class="badge {{ complaint.priority_badge_class }}">{{ complaint.priority }}</span></span>
+                    </div>
+                    <div class="field">
+                        <span class="field-label">Submitted</span>
+                        <span class="field-value">{{ complaint.created_at.strftime('%b %d, %Y %I:%M %p') }}</span>
+                    </div>
+                    <div class="d-grid mt-3">
+                        <a href="{{ url_for('complaint_detail', complaint_id=complaint.id) }}" class="btn btn-primary">
+                            <i class="bi bi-eye me-1"></i>View Details
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox empty-state-icon"></i>
+            <h4 class="empty-state-title">No complaints submitted yet</h4>
+            <p class="empty-state-text">You haven't submitted any complaints yet.</p>
+            <a href="{{ url_for('submit_complaint') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i>Submit Your First Complaint
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
